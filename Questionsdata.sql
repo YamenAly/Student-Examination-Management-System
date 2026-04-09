@@ -1,29 +1,11 @@
 
 -- INSERT INTO Questions (QuestionID, CourseID, QuestionText, QuestionType, Points) VALUES
 
--- -------------------------
--- Course 1: HTML & CSS (1–8)
--- -------------------------
--- =========================
--- 1) COURSES
--- =========================
-INSERT INTO Course (CourseID, CourseName, MinDegree, MaxDegree) VALUES
-(1, 'HTML & CSS', 0, 80),
-(2, 'JavaScript', 0, 80),
-(3, 'Python Basics', 0, 80),
-(4, 'SQL & Databases', 0, 80),
-(5, 'Linux Fundamentals', 0, 80),
-(6, 'Network Basics', 0, 80),
-(7, 'Kotlin Basics', 0, 80),
-(8, 'Swift Basics', 0, 80),
-(9, 'Flutter & Dart', 0, 80),
-(10, 'Cloud Fundamentals', 0, 80),
-(11, 'Docker & Kubernetes', 0, 80),
-(12, 'CI/CD Pipelines', 0, 80);
+
 
 
 -- =========================
--- 2) QUESTIONS
+-- 1) QUESTIONS
 -- =========================
 
 -- Course 1

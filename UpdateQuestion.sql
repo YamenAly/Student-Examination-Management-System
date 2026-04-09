@@ -1,19 +1,26 @@
 CREATE OR REPLACE PROCEDURE UpdateQuestion
 (
-    IN CourseID INT,
-    IN QuestionText TEXT,
-    IN QuestionType TEXT,
-    IN Points INT
+    IN q_CourseID INT,
+    IN q_QuestionText TEXT,
+    IN q_QuestionType TEXT,
+    IN q_Points INT
 )
 LANGUAGE plpgsql
-AS $BODY$
+AS $$
     BEGIN
         UPDATE Questions 
         SET
-            CourseID = CourseID,
-            QuestionText = QuestionText,
-            QuestionType = QuestionType,
-            Points = Points
-        VALUES QuestionID = QuestionID;
-    END
-$BODY$;
+            CourseID = q_CourseID,
+            QuestionText = q_QuestionText,
+            QuestionType = q_QuestionType,
+            Points = q_Points
+        WHERE QuestionID = q_QuestionID;
+        EXCEPTION
+        WHEN foreign_key_violation THEN
+        RAISE EXCEPTION 'OptionID invalid';
+        EXCEPTION
+        WHEN not_null_violation THEN
+        RAISE EXCEPTION 'Null Values not alloweds';
+    END;
+
+$$;

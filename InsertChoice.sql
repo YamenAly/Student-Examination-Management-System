@@ -1,13 +1,20 @@
 CREATE OR REPLACE PROCEDURE InsertChoice
 (
-    IN QuestionID INT,
-    IN OptionText TEXT,
-    IN OptionOrder INT    
+    IN c_QuestionID INT,
+    IN c_OptionText TEXT,
+    IN c_OptionOrder INT    
 )
 LANGUAGE plpgsql
-AS $BODY$
+AS $$
     BEGIN
         INSERT INTO Choice ( QuestionID, OptionText, OptionOrder) 
-        VALUES ( QuestionID, OptionText, OptionOrder);
-    END
-$BODY$;
+        VALUES ( c_QuestionID, c_OptionText, c_OptionOrder);
+
+        EXCEPTION
+        WHEN foreign_key_violation THEN
+        RAISE EXCEPTION 'QuestionID invalid';
+        EXCEPTION
+        WHEN not_null_violation THEN
+        RAISE EXCEPTION 'Null Values not alloweds';           
+    END;
+$$;

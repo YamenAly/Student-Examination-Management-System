@@ -1,17 +1,23 @@
 CREATE OR REPLACE PROCEDURE UpdateChoice
 (
-    IN OptionID INT,
-    IN OptionText TEXT,
-    IN OptionOrder INT    
+    IN c_OptionID INT,
+    IN c_OptionText TEXT,
+    IN c_OptionOrder INT    
 )
 LANGUAGE plpgsql
-AS $BODY$
+AS $$
     BEGIN
         UPDATE Choice 
         SET
-            OptionText = OptionText,
-            OptionOrder = OptionOrder
+            OptionText = c_OptionText,
+            OptionOrder = c_OptionOrder
         WHERE 
-            OptionID = OptionID;
+            OptionID = c_OptionID;
+        EXCEPTION
+        WHEN foreign_key_violation THEN
+        RAISE EXCEPTION 'OptionID invalid';
+        EXCEPTION
+        WHEN not_null_violation THEN
+        RAISE EXCEPTION 'Null Values not alloweds';    
     END
-$BODY$;
+$$;
