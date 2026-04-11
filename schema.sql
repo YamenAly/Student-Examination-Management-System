@@ -37,20 +37,10 @@ CREATE TABLE IF NOT EXISTS Course (
 );
 ---------------------------------------------------------
 
-ALTER TABLE Course
-ADD COLUMN TrackID INT not null --fk;
-
-ALTER TABLE Course
-ADD CONSTRAINT fk_trackid
-FOREIGN KEY (TrackID) REFERENCES Track(TrackID) ON DELETE CASCADE;
-
--- -- index for trackid
-CREATE INDEX idx_course_trackid ON Course(TrackID);
-
 -- Track_Course (junction)
 CREATE TABLE Track_Course (
-	TrackID  INT NOT NULL --fk,
-    CourseID INT NOT NULL --FK,
+	TrackID  INT NOT NULL ,
+    CourseID INT NOT NULL,
     PRIMARY KEY (TrackID, CourseID) 	 
 );
 
@@ -153,7 +143,7 @@ CREATE INDEX ModelAnswer_idx ON ModelAnswer(QuestionID);
 CREATE TABLE Exam (
 ExamID SERIAL PRIMARY KEY,
 ExamName TEXT NOT NULL,
-CourseID INT NOT NULL --FK, 
+CourseID INT NOT NULL , 
 CreatedDate TIMESTAMP DEFAULT NOW(),
 TotalQuestions INT NOT NULL,
 CHECK (TotalQuestions > 0)
@@ -168,8 +158,8 @@ CREATE INDEX course_exam_idx ON Exam(CourseID);
 
 --ExamQuestion table creation
 CREATE TABLE ExamQuestion (
-ExamID INT NOT NULL,      --FK
-QuestionID INT NOT NULL,  --FK
+ExamID INT NOT NULL,      
+QuestionID INT NOT NULL,  
 OrderNo INT NOT NULL,
 PRIMARY KEY (ExamID, QuestionID)
 );
@@ -184,8 +174,8 @@ CREATE INDEX eq_question_idx ON ExamQuestion(QuestionID);
 --StudentExam table creation
 CREATE TABLE StudentExam (
 StudentExamID SERIAL PRIMARY KEY,
-StudentID INT NOT NULL, --FK
-ExamID INT NOT NULL,    --FK
+StudentID INT NOT NULL, 
+ExamID INT NOT NULL,    
 StartTime TIMESTAMP DEFAULT NOW(),
 EndTime TIMESTAMP,
 TotalGrade INT DEFAULT 0
@@ -210,7 +200,7 @@ ChosenOptionID INT NOT NULL --FK
 --Add Foreign key constraint
 ALTER TABLE StudentAnswer ADD CONSTRAINT sa_exam_fk FOREIGN KEY (StudentExamID) REFERENCES StudentExam(StudentExamID) ON DELETE CASCADE; 
 ALTER TABLE StudentAnswer ADD CONSTRAINT sa_question_fk FOREIGN KEY (QuestionID) REFERENCES Questions(QuestionID) ON DELETE CASCADE;
-ALTER TABLE StudentAnswer ADD CONSTRAINT sa_option_fk FOREIGN KEY (ChosenOptionID) REFERENCES Option(OptionID) ON DELETE CASCADE;
+ALTER TABLE StudentAnswer ADD CONSTRAINT sa_option_fk FOREIGN KEY (ChosenOptionID) REFERENCES Choice(OptionID) ON DELETE CASCADE;
 -------------------------------------------------------------
 --Create index for foreign key column
 CREATE INDEX sa_exam_idx ON StudentAnswer(StudentExamID);
