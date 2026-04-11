@@ -152,41 +152,59 @@ CALL DeleteTrack(1);
 -- there are three types of parameter in procedure :-in - out - inout
 -- here we can't use in parapeter as it only send value and can't recive and also we can not use out parameter as it only recive so we use here inout parameter as we need to send and recive
 -- first  it checks the track id whether it exists ir not then it select from track table the vlue and return it
+-- we use recurser with fitch to return all row that matches not only the first row
+
+
 CREATE OR REPLACE PROCEDURE SelectTrack
 (
-INOUT p_TrackID  INT,
-INOUT p_TrackName  TEXT  DEFAULT NULL,
-INOUT p_DepartmentID INT DEFAULT NULL
+    INOUT p_TrackID INT,
+    INOUT p_TrackName TEXT DEFAULT NULL,
+    INOUT p_DepartmentID INT DEFAULT NULL
 )
 LANGUAGE plpgsql
 AS $$
+DECLARE
+    				
+cur_Track CURSOR FOR  --declare cursor filtered by TrackID and DepID
+SELECT
+Track.TrackID,
+Track.TrackName,
+Track.DepartmentID
+FROM Track
+WHERE Track.TrackID = p_TrackID
+AND Track.DepartmentID = p_DepartmentID;
+
 BEGIN
-    -- Check if TrackID exists
-    IF NOT EXISTS (SELECT 1 FROM Track WHERE TrackID = p_TrackID) 
-	THEN
-        RAISE EXCEPTION 'TrackID % does not exist.', p_TrackID;
-
-    ELSE
-        SELECT  
-		Track.TrackID,
-		Track.TrackName,
-		Track.DepartmentID
-        INTO    
-		p_TrackID,        
-		p_TrackName,
-        p_DepartmentID
-        FROM Track
-        WHERE
-		Track.TrackID = p_TrackID;
-
-        RAISE NOTICE 'Track found: ID = %, Name = %, DepartmentID = %',p_TrackID, p_TrackName, p_DepartmentID;
+    --check if TrackID exists under the given DepartmentID
+    IF NOT EXISTS (
+        SELECT 1 FROM Track
+        WHERE TrackID = p_TrackID
+          AND DepartmentID = p_DepartmentID
+    ) THEN
+        RAISE EXCEPTION 'TrackID % does not exist in DepartmentID %.', p_TrackID, p_DepartmentID;
     END IF;
+    -- Open cursor
+    OPEN cur_Track;
+    -- Fetch only the one matching row directly so we don't need loop
+    FETCH FIRST FROM cur_Track INTO p_TrackID, p_TrackName, p_DepartmentID;
+    -- close cursor
+    CLOSE cur_Track;
+    RAISE NOTICE 'Track found:ID = %, Name = %, DepartmentID = %', p_TrackID, p_TrackName, p_DepartmentID;
 
 END;
 $$;
 
-CALL SelectTrack(3, NULL, NULL);
-call selectTrack(2);
 
+-- calling with transation as the recuse can't be called witk call or exc
+DO $$
+DECLARE
+    v_TrackID      INT := 3;
+    v_TrackName    TEXT := NULL;
+    v_DepartmentID INT := 2;
+BEGIN
+    CALL SelectTrack(v_TrackID, v_TrackName, v_DepartmentID);
+    RAISE NOTICE 'Result → ID: %, Name: %, DeptID: %', v_TrackID, v_TrackName, v_DepartmentID;
+END;
+$$;
 
 --##########################
