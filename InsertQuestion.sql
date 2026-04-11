@@ -16,7 +16,7 @@ AS $$
         RAISE EXCEPTION 'CourseID invalid';
         
         WHEN check_violation THEN
-        RAISE EXCEPTION "Invalid question type";
+        RAISE EXCEPTION 'Invalid question type';
 
         WHEN not_null_violation THEN
         RAISE EXCEPTION 'null values are not allowed';
