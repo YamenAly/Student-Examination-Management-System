@@ -155,56 +155,42 @@ CALL DeleteTrack(1);
 -- we use recurser with fitch to return all row that matches not only the first row
 
 
+
+
 CREATE OR REPLACE PROCEDURE SelectTrack
 (
-    INOUT p_TrackID INT,
-    INOUT p_TrackName TEXT DEFAULT NULL,
-    INOUT p_DepartmentID INT DEFAULT NULL
+IN p_DepartmentID INT,
+INOUT p_Cursor REFCURSOR DEFAULT 'cur_Track'
 )
 LANGUAGE plpgsql
 AS $$
-DECLARE
-    				
-cur_Track CURSOR FOR  --declare cursor filtered by TrackID and DepID
-SELECT
-Track.TrackID,
-Track.TrackName,
-Track.DepartmentID
-FROM Track
-WHERE Track.TrackID = p_TrackID
-AND Track.DepartmentID = p_DepartmentID;
-
 BEGIN
-    --check if TrackID exists under the given DepartmentID
-    IF NOT EXISTS (
-        SELECT 1 FROM Track
-        WHERE TrackID = p_TrackID
-          AND DepartmentID = p_DepartmentID
-    ) THEN
-        RAISE EXCEPTION 'TrackID % does not exist in DepartmentID %.', p_TrackID, p_DepartmentID;
-    END IF;
-    -- Open cursor
-    OPEN cur_Track;
-    -- Fetch only the one matching row directly so we don't need loop
-    FETCH FIRST FROM cur_Track INTO p_TrackID, p_TrackName, p_DepartmentID;
-    -- close cursor
-    CLOSE cur_Track;
-    RAISE NOTICE 'Track found:ID = %, Name = %, DepartmentID = %', p_TrackID, p_TrackName, p_DepartmentID;
+-- check if DepartmentID exists
+IF NOT EXISTS (SELECT 1 FROM Track WHERE DepartmentID = p_DepartmentID) 
+THEN
+	RAISE EXCEPTION 'DepartmentID % does not exist.', p_DepartmentID;
+END IF;
 
+--open cursor to return all tracks in the dep
+OPEN p_Cursor FOR
+	SELECT  Track.TrackID,
+			Track.TrackName,
+			Track.DepartmentID
+	FROM    Track
+	WHERE   Track.DepartmentID = p_DepartmentID;
+	
+EXCEPTION
+    WHEN OTHERS THEN
+        RAISE NOTICE 'Error in SelectTrack: %', SQLERRM;
 END;
 $$;
 
 
--- calling with transation as the recuse can't be called witk call or exc
-DO $$
-DECLARE
-    v_TrackID      INT := 3;
-    v_TrackName    TEXT := NULL;
-    v_DepartmentID INT := 2;
-BEGIN
-    CALL SelectTrack(v_TrackID, v_TrackName, v_DepartmentID);
-    RAISE NOTICE 'Result → ID: %, Name: %, DeptID: %', v_TrackID, v_TrackName, v_DepartmentID;
+BEGIN;
+    CALL SelectTrack(3);
+    FETCH ALL FROM cur_Track;
 END;
-$$;
+
+
 
 --##########################

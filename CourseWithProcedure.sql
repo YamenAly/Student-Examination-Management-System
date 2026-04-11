@@ -168,35 +168,42 @@ CALL DeleteCourse(1);
 -- since the selction depentin track id so it should taking the value of id and the remain values doesn't matter
 -- the selection view is inner join with track and course table where trackid is equal to p_trackid in the procedure
 
+
+
+
 CREATE OR REPLACE PROCEDURE SelectCoursesByTrack
 (
-    INOUT p_TrackID INT,
-    INOUT p_CourseName TEXT DEFAULT NULL,
-    INOUT p_MinDegree INT DEFAULT NULL,
-    INOUT p_MaxDegree INT DEFAULT NULL
+    IN    p_TrackID INT,
+    INOUT p_Cursor  REFCURSOR DEFAULT NULL 'cur_Courses'
 )
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    -- Check if TrackID exists
-    IF NOT EXISTS (SELECT 1 FROM Track WHERE TrackID = p_TrackID) THEN
-        RAISE EXCEPTION 'TrackID % does not exist.', p_TrackID;
+--check if TrackID exists
+IF NOT EXISTS (SELECT 1 FROM Track WHERE TrackID = p_TrackID) 
+THEN
+	RAISE EXCEPTION 'TrackID % does not exist.', p_TrackID;
+END IF;
 
-    ELSE
-        SELECT  Course.CourseName,
-                Course.MinDegree,
-                Course.MaxDegree
-        INTO    p_CourseName,
-                p_MinDegree,
-                p_MaxDegree
-        FROM    Course
-        INNER JOIN Track ON Course.TrackID = Track.TrackID
-        WHERE   Course.TrackID = p_TrackID;
+-- open cursor to return all courses in the track
+OPEN p_Cursor FOR
+	SELECT  Course.CourseName,
+			Course.MinDegree,
+			Course.MaxDegree
+	FROM    Course
+	INNER JOIN Track ON Course.TrackID = Track.TrackID
+	WHERE   Course.TrackID = p_TrackID;
 
-        RAISE NOTICE 'Courses found for TrackID: %', p_TrackID;
-    END IF;
-
+ --catch the exception so transaction doesn't abort
+EXCEPTION
+    WHEN OTHERS THEN
+        RAISE NOTICE 'Error: %', SQLERRM;  --prints the error
 END;
 $$;
 
-CALL SelectCoursesByTrack(3);
+
+BEGIN;
+    CALL SelectCoursesByTrack(3);
+    FETCH ALL FROM cur_Courses;
+END;
+
