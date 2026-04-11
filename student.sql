@@ -9,10 +9,10 @@ LANGUAGE plpgsql
 AS $$
     BEGIN
 	if new_Phone Is not null and  new_Phone !~ '^\+?201[0125][0-9]{8}$' THEN
-		RAISE EXCEPTION "Invalid Phone number";
+		RAISE EXCEPTION 'Invalid Phone number';
 	end if;
 	if new_Email Is not null and  new_Email !~ '^[A-z0-9._-]+@[A-z0-9.-]+\.[A-z]{2,}$' THEN
-		RAISE EXCEPTION "Invalid Email format";
+		RAISE EXCEPTION 'Invalid Email format';
 	end if;
 	
 	INSERT INTO Student (Name,Email,Phone) VALUES (new_Name,new_Email,new_Phone);
@@ -57,10 +57,10 @@ AS $$
     BEGIN
 	--checks validations on the procedure as the user will use the procedure only so it's better to be here.
 	if new_Phone Is not null and  new_Phone !~ '^\+?201[0125][0-9]{8}$' THEN
-		RAISE EXCEPTION "Invalid Phone number";
+		RAISE EXCEPTION 'Invalid Phone number';
 	end if;
 	if new_Email Is not null and  new_Email !~ '^[A-z0-9._-]+@[A-z0-9.-]+\.[A-z]{2,}$' THEN
-		RAISE EXCEPTION "Invalid Email format";
+		RAISE EXCEPTION 'Invalid Email format';
 	end if;
 		
     UPDATE Student set Name = new_name, Email = new_Email,phone=new_phone  WHERE StudentID = student_id;

@@ -47,8 +47,8 @@ BEGIN
 END;
 $$;
 
-BEGIN;
+
 CALL selectDepartment(2, 'my_cursor');
-FETCH ALL FROM my_cursor;
-COMMIT;
+FETCH ALL IN my_cursor;
+
 

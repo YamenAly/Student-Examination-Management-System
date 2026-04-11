@@ -64,7 +64,7 @@ BEGIN
 
 END;
 $$;
-
+begin;
 CALL InsertCourse('HTML & CSS',          50, 100, 1);  -- Frontend Development
 CALL InsertCourse('JavaScript',          50, 100, 1);  -- Frontend Development
 CALL InsertCourse('Python Basics',       50, 100, 3);  -- Data Analysis
@@ -77,7 +77,7 @@ CALL InsertCourse('Flutter & Dart',      50, 100, 7);  -- Android Development
 CALL InsertCourse('Cloud Fundamentals',  50, 100, 9);  -- AWS Cloud
 CALL InsertCourse('Docker & Kubernetes', 50, 100, 10); -- DevOps
 CALL InsertCourse('CI/CD Pipelines',     50, 100, 10); -- DevOps
-
+commit;
 
 -- #############################################################################################
 

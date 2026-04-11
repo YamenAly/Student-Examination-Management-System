@@ -9,7 +9,7 @@ LANGUAGE plpgsql
 AS $$
  BEGIN
 		if new_Email Is not null and  new_Email !~ '^[A-z0-9._-]+@[A-z0-9.-]+\.[A-z]{2,}$' THEN
-			RAISE EXCEPTION "Invalid Email format";
+			RAISE EXCEPTION 'Invalid Email format';
 		end if;
 	
 		INSERT INTO Instructor (Name,Email,DepartmentNo) VALUES (new_Name,new_Email,new_DepartmentNo);
@@ -55,7 +55,7 @@ AS $$
 
 	-- validation the email address regex . 
 	if new_Email Is not null and  new_Email !~ '^[A-z0-9._-]+@[A-z0-9.-]+\.[A-z]{2,}$' THEN
-		RAISE EXCEPTION "Invalid Email format";
+		RAISE EXCEPTION 'Invalid Email format';
 	end if;
 		
     UPDATE Instructor set Name = new_name, Email = new_Email,DepartmentNo=new_DepartmentNo  WHERE InstructorID = instructor_id;

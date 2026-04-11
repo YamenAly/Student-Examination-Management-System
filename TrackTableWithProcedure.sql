@@ -1,9 +1,3 @@
---  Track (TrackID, TrackName TEXT, DepartmentID FK)
-CREATE TABLE Track (
-	TrackID  SERIAL PRIMARY KEY ,
-	TrackName TEXT NOT NULL,
-	DepartmentID INT not null	
-);
 
 
 Alter table Track
@@ -160,7 +154,7 @@ CALL DeleteTrack(1);
 CREATE OR REPLACE PROCEDURE SelectTrack
 (
 IN p_DepartmentID INT,
-INOUT p_Cursor REFCURSOR DEFAULT 'cur_Track'
+INOUT p_Cursor REFCURSOR 
 )
 LANGUAGE plpgsql
 AS $$
@@ -186,10 +180,10 @@ END;
 $$;
 
 
-BEGIN;
-    CALL SelectTrack(3);
-    FETCH ALL FROM cur_Track;
-END;
+
+CALL SelectTrack(1,'my_cur');
+FETCH ALL FROM my_cur;
+
 
 
 
