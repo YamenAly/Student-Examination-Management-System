@@ -7,6 +7,18 @@ BEGIN
 END;
 $$;
 
+BEGIN;
+SAVEPOINT before_insert_dept;
+Call insertDepartment('Web Development',    'Cairo');  
+Call insertDepartment('Data Engineering',   'Alexandria');  
+Call insertDepartment('Cyber Security',     'Giza');  
+Call insertDepartment('Mobile Development', 'Tanta');  
+Call insertDepartment('Cloud Computing',    'Smart Village');  
+SAVEPOINT after_insert_dept;
+
+commit;
+
+
 -- Create procedure to update department after check if passed department exists
 CREATE OR REPLACE PROCEDURE updateDepartment(p_dept_id INT, p_dept_name TEXT, p_dept_loc TEXT)
 LANGUAGE plpgsql AS 
