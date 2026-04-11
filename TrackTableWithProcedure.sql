@@ -38,7 +38,7 @@ begin
 		INSERT INTO Track(TrackName, DepartmentID)
         VALUES (p_TrackName, p_DepartmentID);
 
-		raise notice 'track inserted successfully. TrackID: %', TrackID;
+		raise notice 'track inserted successfully.';
 
 	END IF ;
 
