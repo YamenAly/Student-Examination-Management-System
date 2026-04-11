@@ -24,13 +24,18 @@ Alter table Track
 CREATE INDEX idx_track_departmentid ON Track(DepartmentID);
 
 --Table Course (Create if not exist)
-CREATE TABLE IF NOT EXISTS  Course(
-	CourseID SERIAL PRIMARY KEY,
-	CourseName TEXT,
-	MinDegree INT,
-	MaxDegree INT
-	
+CREATE TABLE IF NOT EXISTS Course (
+    CourseID   SERIAL PRIMARY KEY,
+    CourseName TEXT NOT NULL,
+    MinDegree  INT,
+    MaxDegree  INT,
+    CONSTRAINT course_degree_chk
+        CHECK (
+            (MinDegree IS NULL OR MaxDegree IS NULL)
+            OR (MinDegree <= MaxDegree)
+        )
 );
+---------------------------------------------------------
 
 ALTER TABLE Course
 ADD COLUMN TrackID INT not null --fk;
@@ -39,7 +44,7 @@ ALTER TABLE Course
 ADD CONSTRAINT fk_trackid
 FOREIGN KEY (TrackID) REFERENCES Track(TrackID) ON DELETE CASCADE;
 
--- index for trackid
+-- -- index for trackid
 CREATE INDEX idx_course_trackid ON Course(TrackID);
 
 -- Track_Course (junction)
@@ -79,8 +84,8 @@ CREATE TABLE IF NOT EXISTS Student_Track (
     StudentID  INT,
     TrackID    INT,
     PRIMARY KEY (StudentID, TrackID),
-	CONSTRAINT fk_studentTrack_student FOREIGN KEY (StudentID) REFERENCES Student(StudentID),
-	CONSTRAINT fk_studentTrack_track FOREIGN KEY (TrackID) REFERENCES Track(TrackID)
+	CONSTRAINT fk_studentTrack_student FOREIGN KEY (StudentID) REFERENCES Student(StudentID) ON DELETE CASCADE,
+	CONSTRAINT fk_studentTrack_track FOREIGN KEY (TrackID) REFERENCES Track(TrackID) ON DELETE CASCADE
 );
 CREATE INDEX idx_studentTrack_track ON Student_Track(TrackID);
 CREATE INDEX idx_studentTrack_student ON Student_Track(StudentID);
@@ -102,8 +107,8 @@ CREATE TABLE IF NOT EXISTS Instructor_Course (
     InstructorID  INT,
     CourseID      INT,
     PRIMARY KEY (InstructorID, CourseID),
-	CONSTRAINT fk_instructorCourse_instructor FOREIGN KEY (InstructorID) REFERENCES Instructor(InstructorID),
-	CONSTRAINT fk_instructorCourse_course FOREIGN KEY (CourseID) REFERENCES Course(CourseID)
+	CONSTRAINT fk_instructorCourse_instructor FOREIGN KEY (InstructorID) REFERENCES Instructor(InstructorID) ON DELETE CASCADE,
+	CONSTRAINT fk_instructorCourse_course FOREIGN KEY (CourseID) REFERENCES Course(CourseID) ON DELETE CASCADE
 );
 CREATE INDEX idx_instructorCourse_course ON Instructor_Course(CourseID);
 CREATE INDEX idx_instructorCourse_Instructor ON Instructor_Course(InstructorID);
@@ -130,7 +135,7 @@ CREATE TABLE IF NOT EXISTS Choice(
     OptionText TEXT NOT NULL,
     OptionOrder INT NOT NULL,
 
-    CONSTRAINT fk_question FOREIGN KEY (QuestionID) REFERENCE Questions(QuestionID)
+    CONSTRAINT fk_question FOREIGN KEY (QuestionID) REFERENCES Questions(QuestionID)
 
 );
 CREATE INDEX question_option_idx ON Choice(QuestionID);
@@ -140,8 +145,8 @@ CREATE TABLE IF NOT EXISTS ModelAnswer(
     QuestionID INT UNIQUE NOT NULL,
     CorrectOptionID INT NOT NULL,
 
-    CONSTRAINT fk_question FOREIGN KEY (QuestionID) REFERENCE Questions(QuestionID),
-    CONSTRAINT fk_option FOREIGN KEY (CorrectOptionID) REFERENCE Choice(OptionID)
+    CONSTRAINT fk_question FOREIGN KEY (QuestionID) REFERENCES Questions(QuestionID),
+    CONSTRAINT fk_option FOREIGN KEY (CorrectOptionID) REFERENCES Choice(OptionID)
 );
 CREATE INDEX ModelAnswer_idx ON ModelAnswer(QuestionID);
 --Exam table creation
@@ -171,35 +176,11 @@ PRIMARY KEY (ExamID, QuestionID)
 -------------------------------------------------------------
 --Add Foreign key constraint
 ALTER TABLE ExamQuestion ADD CONSTRAINT eq_exam_fk FOREIGN KEY (ExamID) REFERENCES Exam(ExamID) ON DELETE CASCADE; 
-ALTER TABLE ExamQuestion ADD CONSTRAINT eq_question_fk FOREIGN KEY (QuestionID) REFERENCES Question(QuestionID) 
-ON DELETE CASCADE;
+ALTER TABLE ExamQuestion ADD CONSTRAINT eq_question_fk FOREIGN KEY (QuestionID) REFERENCES Questions(QuestionID) ON DELETE CASCADE;
 -------------------------------------------------------------
 --Create index for foreign key column
 CREATE INDEX eq_question_idx ON ExamQuestion(QuestionID);
 
-
---StudentAnswer table creation
-CREATE TABLE StudentAnswer (
-StudentAnswerID SERIAL PRIMARY KEY,
-StudentExamID INT NOT NULL, --FK
-QuestionID INT NOT NULL,    --FK
-ChosenOptionID INT NOT NULL --FK
-);
--------------------------------------------------------------
---Add Foreign key constraint
-ALTER TABLE StudentAnswer ADD CONSTRAINT sa_exam_fk FOREIGN KEY (StudentExamID) REFERENCES StudentExam(StudentExamID) 
-ON DELETE CASCADE; 
-ALTER TABLE StudentAnswer ADD CONSTRAINT sa_question_fk FOREIGN KEY (QuestionID) REFERENCES Question(QuestionID) 
-ON DELETE CASCADE;
-ALTER TABLE StudentAnswer ADD CONSTRAINT sa_option_fk FOREIGN KEY (ChosenOptionID) REFERENCES Option(OptionID) 
-ON DELETE CASCADE;
--------------------------------------------------------------
---Create index for foreign key column
-CREATE INDEX sa_exam_idx ON StudentAnswer(StudentExamID);
-CREATE INDEX sa_question_idx ON StudentAnswer(QuestionID);
-CREATE INDEX sa_option_idx ON StudentAnswer(ChosenOptionID);
-
- 
 --StudentExam table creation
 CREATE TABLE StudentExam (
 StudentExamID SERIAL PRIMARY KEY,
@@ -212,13 +193,67 @@ TotalGrade INT DEFAULT 0
 -------------------------------------------------------------
 --Add Foreign key constraint
 ALTER TABLE StudentExam ADD CONSTRAINT se_exam_fk FOREIGN KEY (ExamID) REFERENCES Exam(ExamID) ON DELETE CASCADE; 
-ALTER TABLE StudentExam ADD CONSTRAINT se_student_fk FOREIGN KEY (StudentID) REFERENCES Student(StudentID) 
-ON DELETE CASCADE;
+ALTER TABLE StudentExam ADD CONSTRAINT se_student_fk FOREIGN KEY (StudentID) REFERENCES Student(StudentID) ON DELETE CASCADE;
 -------------------------------------------------------------
 --Create index for foreign key column
 CREATE INDEX se_student_idx ON StudentExam(StudentID);
 CREATE INDEX se_exam_idx ON StudentExam(ExamID);
 
+--StudentAnswer table creation
+CREATE TABLE StudentAnswer (
+StudentAnswerID SERIAL PRIMARY KEY,
+StudentExamID INT NOT NULL, --FK
+QuestionID INT NOT NULL,    --FK
+ChosenOptionID INT NOT NULL --FK
+);
+-------------------------------------------------------------
+--Add Foreign key constraint
+ALTER TABLE StudentAnswer ADD CONSTRAINT sa_exam_fk FOREIGN KEY (StudentExamID) REFERENCES StudentExam(StudentExamID) ON DELETE CASCADE; 
+ALTER TABLE StudentAnswer ADD CONSTRAINT sa_question_fk FOREIGN KEY (QuestionID) REFERENCES Questions(QuestionID) ON DELETE CASCADE;
+ALTER TABLE StudentAnswer ADD CONSTRAINT sa_option_fk FOREIGN KEY (ChosenOptionID) REFERENCES Option(OptionID) ON DELETE CASCADE;
+-------------------------------------------------------------
+--Create index for foreign key column
+CREATE INDEX sa_exam_idx ON StudentAnswer(StudentExamID);
+CREATE INDEX sa_question_idx ON StudentAnswer(QuestionID);
+CREATE INDEX sa_option_idx ON StudentAnswer(ChosenOptionID);
+
+ 
+
 begin;
 SAVEPOINT schema_withoutanydata;
+commit;
+
+begin;
+-- Create the schemas (adm, instrcutor, student)
+--save point here
+
+SAVEPOINT mini_schema_before;
+create schema adm;
+create schema instructor;
+create schema student;
+
+SAVEPOINT mini_schema_after;
+
+SAVEPOINT create_roles_before;
+
+create role adm_role;
+create role instructor_role;
+create role student_role;
+
+SAVEPOINT create_roles_after;
+SAVEPOINT assign_schema_to_roleBefore;
+
+grant usage on schema student to student_role;
+grant usage on schema instructor to instructor_role;
+grant usage on schema adm to adm_role;
+SAVEPOINT assign_schema_to_roleafter;
+SAVEPOINT assign_Privileges_before;
+
+grant all PRIVILEGES on all tables in schema public to adm_role;
+revoke all privileges on all tables in schema public from student_role;
+revoke all privileges on all tables in schema public from instructor_role;
+SAVEPOINT assign_Privileges_after;
+
+
+
 commit;
