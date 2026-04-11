@@ -1,0 +1,396 @@
+
+DATABASE DICTIONARY – Examination System Schema
+==============================================
+
+1) TABLE: Department
+-------------------
+Description:
+  Stores departments/branches.
+
+Columns:
+  - DepartmentID (SERIAL, PK, NOT NULL)
+      Unique identifier for the department.
+  - DepartementName (TEXT, NOT NULL)
+      Name of the department.
+  - DeptLocation (TEXT, NULL)
+      Location of the department.
+
+Constraints:
+  - PK_Department: PRIMARY KEY (DepartmentID)
+
+-----------------------------------------------------------------------
+
+2) TABLE: Track
+---------------
+Description:
+  Stores tracks/programs that belong to departments.
+
+Columns:
+  - TrackID (SERIAL, PK, NOT NULL)
+      Unique identifier for the track.
+  - TrackName (TEXT, NOT NULL)
+      Name of the track.
+  - DepartmentID (INT, NOT NULL, FK)
+      References the department that owns the track.
+
+Constraints:
+  - PK_Track: PRIMARY KEY (TrackID)
+  - fk_depid: FOREIGN KEY (DepartmentID)
+      REFERENCES Department(DepartmentID)
+      ON DELETE CASCADE
+
+Indexes:
+  - idx_track_departmentid on Track(DepartmentID)
+
+-----------------------------------------------------------------------
+
+3) TABLE: Course
+----------------
+Description:
+  Course master table. Courses are shared across tracks.
+  (Relationship between Course and Track is many-to-many using Track_Course.)
+
+Columns:
+  - CourseID (SERIAL, PK, NOT NULL)
+      Unique identifier for the course.
+  - CourseName (TEXT, NOT NULL)
+      Course name/title.
+  - MinDegree (INT, NULL)
+      Minimum degree/score for the course.
+  - MaxDegree (INT, NULL)
+      Maximum degree/score for the course.
+
+Constraints:
+  - PK_Course: PRIMARY KEY (CourseID)
+  - course_degree_chk (recommended):
+      CHECK (
+        (MinDegree IS NULL OR MaxDegree IS NULL)
+        OR (MinDegree <= MaxDegree)
+      )
+
+-----------------------------------------------------------------------
+
+4) TABLE: Track_Course
+----------------------
+Description:
+  Junction table implementing many-to-many relationship between Track and Course.
+  A course can belong to multiple tracks; a track can contain multiple courses.
+
+Columns:
+  - TrackID (INT, NOT NULL, PK, FK)
+      References Track(TrackID).
+  - CourseID (INT, NOT NULL, PK, FK)
+      References Course(CourseID).
+
+Constraints:
+  - PK_Track_Course: PRIMARY KEY (TrackID, CourseID)
+      Prevents duplicates of the same (TrackID, CourseID) pair.
+  - fk_track: FOREIGN KEY (TrackID)
+      REFERENCES Track(TrackID)
+      ON DELETE CASCADE
+  - fk_course: FOREIGN KEY (CourseID)
+      REFERENCES Course(CourseID)
+      ON DELETE CASCADE
+
+Indexes:
+  - (Implicit) Primary key creates an index on (TrackID, CourseID)
+  - idx_track_course_courseid on Track_Course(CourseID)
+      Supports queries like: “get all tracks for a course” or joins by CourseID.
+
+-----------------------------------------------------------------------
+
+5) TABLE: Student
+-----------------
+Description:
+  Stores students.
+
+Columns:
+  - StudentID (SERIAL, PK, NOT NULL)
+      Unique student identifier.
+  - Name (TEXT, NOT NULL)
+      Student full name.
+  - Email (TEXT, NOT NULL, UNIQUE)
+      Student email (must be unique).
+  - Phone (TEXT, NOT NULL)
+      Student phone number.
+
+Constraints:
+  - PK_Student: PRIMARY KEY (StudentID)
+  - UQ_Student_Email: UNIQUE (Email)
+
+-----------------------------------------------------------------------
+
+6) TABLE: Student_Track
+-----------------------
+Description:
+  Junction table mapping students to tracks (many-to-many).
+
+Columns:
+  - StudentID (INT, PK, FK)
+      References Student(StudentID).
+  - TrackID (INT, PK, FK)
+      References Track(TrackID).
+
+Constraints:
+  - PK_Student_Track: PRIMARY KEY (StudentID, TrackID)
+  - fk_studentTrack_student: FOREIGN KEY (StudentID) REFERENCES Student(StudentID)
+  - fk_studentTrack_track: FOREIGN KEY (TrackID) REFERENCES Track(TrackID)
+
+Indexes:
+  - idx_studentTrack_track on Student_Track(TrackID)
+  - idx_studentTrack_student on Student_Track(StudentID)
+
+-----------------------------------------------------------------------
+
+7) TABLE: Instructor
+--------------------
+Description:
+  Stores instructors. Each instructor can be assigned to a department.
+
+Columns:
+  - InstructorID (SERIAL, PK, NOT NULL)
+      Unique instructor identifier.
+  - Name (TEXT, NOT NULL)
+      Instructor name.
+  - Email (TEXT, NOT NULL, UNIQUE)
+      Instructor email (unique).
+  - DepartmentNo (INT, NULL, FK)
+      References Department(DepartmentID).
+
+Constraints:
+  - PK_Instructor: PRIMARY KEY (InstructorID)
+  - UQ_Instructor_Email: UNIQUE (Email)
+  - fk_instructor_dept: FOREIGN KEY (DepartmentNo)
+      REFERENCES Department(DepartmentID)
+
+Indexes:
+  - idx_instructor_department on Instructor(DepartmentNo)
+
+-----------------------------------------------------------------------
+
+8) TABLE: Instructor_Course
+---------------------------
+Description:
+  Junction table mapping instructors to courses (many-to-many).
+
+Columns:
+  - InstructorID (INT, PK, FK)
+      References Instructor(InstructorID).
+  - CourseID (INT, PK, FK)
+      References Course(CourseID).
+
+Constraints:
+  - PK_Instructor_Course: PRIMARY KEY (InstructorID, CourseID)
+  - fk_instructorCourse_instructor:
+      FOREIGN KEY (InstructorID) REFERENCES Instructor(InstructorID)
+  - fk_instructorCourse_course:
+      FOREIGN KEY (CourseID) REFERENCES Course(CourseID)
+
+Indexes:
+  - idx_instructorCourse_course on Instructor_Course(CourseID)
+  - idx_instructorCourse_Instructor on Instructor_Course(InstructorID)
+
+-----------------------------------------------------------------------
+
+9) TABLE: Questions
+-------------------
+Description:
+  Question bank linked to a course.
+
+Columns:
+  - QuestionID (SERIAL, PK, NOT NULL)
+      Unique question identifier.
+  - CourseID (INT, NOT NULL, FK)
+      References Course(CourseID).
+  - QuestionText (TEXT, NOT NULL)
+      The question statement.
+  - QuestionType (TEXT, NULL, CHECK)
+      Allowed values: 'MCQ', 'TF'.
+  - Points (INT, NOT NULL)
+      Points for the question.
+
+Constraints:
+  - PK_Questions: PRIMARY KEY (QuestionID)
+  - fk_questions_course: FOREIGN KEY (CourseID) REFERENCES Course(CourseID)
+  - questions_type_chk: CHECK (QuestionType IN ('MCQ','TF'))
+
+Indexes:
+  - question_course_idx on Questions(CourseID)
+
+-----------------------------------------------------------------------
+
+10) TABLE: Choice
+-----------------
+Description:
+  Options/choices for MCQ/TF questions.
+
+Columns:
+  - OptionID (SERIAL, PK, NOT NULL)
+      Unique option identifier.
+  - QuestionID (INT, NOT NULL, FK)
+      References Questions(QuestionID).
+  - OptionText (TEXT, NOT NULL)
+      Option text.
+  - OptionOrder (INT, NOT NULL)
+      Display order of the option for the question.
+
+Constraints:
+  - PK_Choice: PRIMARY KEY (OptionID)
+  - fk_choice_question: FOREIGN KEY (QuestionID)
+      REFERENCES Questions(QuestionID)
+
+Indexes:
+  - question_option_idx on Choice(QuestionID)
+
+-----------------------------------------------------------------------
+
+11) TABLE: ModelAnswer
+----------------------
+Description:
+  Stores the correct option for each question (one correct answer per question).
+
+Columns:
+  - QuestionID (INT, NOT NULL, UNIQUE, FK)
+      References Questions(QuestionID).
+  - CorrectOptionID (INT, NOT NULL, FK)
+      References Choice(OptionID).
+
+Constraints:
+  - UQ_ModelAnswer_QuestionID: UNIQUE (QuestionID)
+  - fk_modelanswer_question: FOREIGN KEY (QuestionID)
+      REFERENCES Questions(QuestionID)
+  - fk_modelanswer_option: FOREIGN KEY (CorrectOptionID)
+      REFERENCES Choice(OptionID)
+
+Indexes:
+  - ModelAnswer_idx on ModelAnswer(QuestionID)
+
+-----------------------------------------------------------------------
+
+12) TABLE: Exam
+---------------
+Description:
+  Defines an exam for a course.
+
+Columns:
+  - ExamID (SERIAL, PK, NOT NULL)
+      Unique exam identifier.
+  - ExamName (TEXT, NOT NULL)
+      Exam title/name.
+  - CourseID (INT, NOT NULL, FK)
+      References Course(CourseID).
+  - CreatedDate (TIMESTAMP, NULL, DEFAULT NOW())
+      Timestamp when exam is created.
+  - TotalQuestions (INT, NOT NULL)
+      Number of questions in exam (must be > 0).
+
+Constraints:
+  - PK_Exam: PRIMARY KEY (ExamID)
+  - course_exam_fk: FOREIGN KEY (CourseID)
+      REFERENCES Course(CourseID)
+      ON DELETE CASCADE
+  - exam_totalquestions_chk: CHECK (TotalQuestions > 0)
+
+Indexes:
+  - course_exam_idx on Exam(CourseID)
+
+-----------------------------------------------------------------------
+
+13) TABLE: ExamQuestion
+-----------------------
+Description:
+  Junction table linking exams to questions with ordering.
+
+Columns:
+  - ExamID (INT, NOT NULL, PK, FK)
+      References Exam(ExamID).
+  - QuestionID (INT, NOT NULL, PK, FK)
+      References Questions(QuestionID).
+  - OrderNo (INT, NOT NULL)
+      The question order inside the exam.
+
+Constraints:
+  - PK_ExamQuestion: PRIMARY KEY (ExamID, QuestionID)
+  - eq_exam_fk: FOREIGN KEY (ExamID)
+      REFERENCES Exam(ExamID)
+      ON DELETE CASCADE
+  - eq_question_fk: FOREIGN KEY (QuestionID)
+      REFERENCES Questions(QuestionID)
+      ON DELETE CASCADE
+
+Indexes:
+  - eq_question_idx on ExamQuestion(QuestionID)
+
+-----------------------------------------------------------------------
+
+14) TABLE: StudentExam
+----------------------
+Description:
+  Represents one student attempt/session for an exam.
+
+Columns:
+  - StudentExamID (SERIAL, PK, NOT NULL)
+      Unique attempt identifier.
+  - StudentID (INT, NOT NULL, FK)
+      References Student(StudentID).
+  - ExamID (INT, NOT NULL, FK)
+      References Exam(ExamID).
+  - StartTime (TIMESTAMP, NULL, DEFAULT NOW())
+      Attempt start time.
+  - EndTime (TIMESTAMP, NULL)
+      Attempt end time.
+  - TotalGrade (INT, NULL, DEFAULT 0)
+      Total grade for the attempt.
+
+Constraints:
+  - PK_StudentExam: PRIMARY KEY (StudentExamID)
+  - se_exam_fk: FOREIGN KEY (ExamID)
+      REFERENCES Exam(ExamID)
+      ON DELETE CASCADE
+  - se_student_fk: FOREIGN KEY (StudentID)
+      REFERENCES Student(StudentID)
+      ON DELETE CASCADE
+
+Indexes:
+  - se_student_idx on StudentExam(StudentID)
+  - se_exam_idx on StudentExam(ExamID)
+
+-----------------------------------------------------------------------
+
+15) TABLE: StudentAnswer
+------------------------
+Description:
+  Stores answers chosen by a student for each question in a specific attempt.
+
+Columns:
+  - StudentAnswerID (SERIAL, PK, NOT NULL)
+      Unique identifier for the answer row.
+  - StudentExamID (INT, NOT NULL, FK)
+      References StudentExam(StudentExamID).
+  - QuestionID (INT, NOT NULL, FK)
+      References Questions(QuestionID).
+  - ChosenOptionID (INT, NOT NULL, FK)
+      References Choice(OptionID).
+
+Constraints:
+  - PK_StudentAnswer: PRIMARY KEY (StudentAnswerID)
+  - sa_exam_fk: FOREIGN KEY (StudentExamID)
+      REFERENCES StudentExam(StudentExamID)
+      ON DELETE CASCADE
+  - sa_question_fk: FOREIGN KEY (QuestionID)
+      REFERENCES Questions(QuestionID)
+      ON DELETE CASCADE
+  - sa_option_fk: FOREIGN KEY (ChosenOptionID)
+      REFERENCES Choice(OptionID)
+      ON DELETE CASCADE
+
+Indexes:
+  - sa_exam_idx on StudentAnswer(StudentExamID)
+  - sa_question_idx on StudentAnswer(QuestionID)
+  - sa_option_idx on StudentAnswer(ChosenOptionID)
+
+=======================================================================
+END OF FILE
+=======================================================================
+
+
