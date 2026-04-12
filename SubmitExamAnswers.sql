@@ -10,6 +10,7 @@ LANGUAGE plpgsql
 AS $$
 DECLARE
     v_StudentEXAM ID INT;
+    v-CourseID INT;
     v_answer JSONB;
     v_QuestionID INT;
     v_OptionID INT;
@@ -32,6 +33,27 @@ BEGIN
 
     IF v_examCount = 0 THEN
         RAISE EXCEPTION "Exam does not exist";
+    END IF
+
+    --get course id
+    SELECT CourseID INTO v_CourseID
+    FROM Exam
+    WHERE ExamID = p_ExamID
+
+    --get track id
+    SELECT TrackID INTO v_TrackID
+    FROM TRACK_Course
+    WHERE CourseID = v_CourseID
+    LIMIT 1;
+
+    --check that student is enrolled  in this track
+    SELECT count(*) INTO v_EnrollCount
+    FROM Student_Track
+    WHERE StudentID = p_StudentID AND TrackID = v_TrackID;
+
+    IF v_EnrollCount = 0 THEN
+        RAISE EXCEPTION
+            'Student is not enrolled in this track'
     END IF
 
     --Check if student has submited the exam
