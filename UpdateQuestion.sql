@@ -18,7 +18,6 @@ AS $$
         EXCEPTION
         WHEN foreign_key_violation THEN
         RAISE EXCEPTION 'OptionID invalid';
-        EXCEPTION
         WHEN not_null_violation THEN
         RAISE EXCEPTION 'Null Values not alloweds';
     END;

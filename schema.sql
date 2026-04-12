@@ -112,7 +112,7 @@ CREATE TABLE IF NOT EXISTS Questions(
     QuestionType TEXT CHECK (QuestionType IN ('MCQ', 'TF')),
     Points INT NOT NULL,
 
-    CONSTRAINT fk_course FOREIGN KEY (CourseID) REFERENCES Course(CourseID) on delete CASCADE
+    CONSTRAINT fk_course FOREIGN KEY (CourseID) REFERENCES Course(CourseID)
 
 );
 CREATE INDEX question_course_idx ON Questions(CourseID);
