@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+{% block title %}{{ exam.examname }}{% endblock %}
+{% block content %}
+
+<div class="exam-topbar">
+  <div class="exam-topbar-info">
+    <div class="exam-topbar-name">{{ exam.examname }}</div>
+    <div class="exam-topbar-meta">{{ questions|length }} Questions &nbsp;·&nbsp; Student: {{ student.name }}</div>
+  </div>
+  <div class="exam-clock" id="exam-clock">
+    <div class="clock-label">Elapsed</div>
+    <div class="clock-time" id="clock-display">00:00:00</div>
+  </div>
+</div>
+
+<div class="exam-layout">
+  <!-- Question Navigator -->
+  <aside class="question-nav">
+    <div class="nav-title">Questions</div>
+    <div class="nav-dots" id="nav-dots">
+      {% for q in questions %}
+      <button class="nav-dot" id="dot-{{ loop.index0 }}" onclick="scrollToQ({{ loop.index0 }})">
+        {{ loop.index }}
+      </button>
+      {% endfor %}
+    </div>
+    <div class="nav-legend">
+      <span class="legend-item"><span class="dot-answered"></span>Answered</span>
+      <span class="legend-item"><span class="dot-unanswered"></span>Skipped</span>
+    </div>
+    <div class="answered-count" id="answered-count">0 / {{ questions|length }}</div>
+  </aside>
+
+  <!-- Questions -->
+  <div class="questions-list" id="questions-list">
+    {% for q in questions %}
+    <div class="question-block" id="qblock-{{ loop.index0 }}" data-index="{{ loop.index0 }}">
+      <div class="question-header">
+        <div class="q-number">Q{{ loop.index }}</div>
+        <div class="q-type-badge {{ q.questiontype|lower }}">{{ q.questiontype }}</div>
+        <div class="q-points">{{ q.points }} pt{% if q.points != 1 %}s{% endif %}</div>
+      </div>
+      <p class="question-text">{{ q.questiontext }}</p>
+
+      {% set outer_idx = loop.index0 %}
+      <div class="choices-list">
+        {% for c in q.choices %}
+        <label class="choice-label" id="lbl-{{ outer_idx }}-{{ loop.index0 }}">
+          <input type="radio"
+                 name="q_{{ q.questionid }}"
+                 value="{{ c.optionid }}"
+                 data-qidx="{{ outer_idx }}"
+                 onchange="markAnswered({{ outer_idx }}, {{ q.questionid }}, {{ c.optionid }})">
+          <span class="choice-marker">{{ ['A','B','C','D','E'][loop.index0] }}</span>
+          <span class="choice-text">{{ c.optiontext }}</span>
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+
+    <div class="submit-zone">
+      <div class="submit-warning" id="submit-warning"></div>
+      <button class="btn btn-submit" onclick="confirmSubmit()">Submit Exam</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm Modal -->
+<div class="modal-overlay" id="modal" style="display:none">
+  <div class="modal-box">
+    <h3 class="modal-title">Submit Exam?</h3>
+    <p class="modal-body" id="modal-body">You have answered <strong id="modal-answered">0</strong> of <strong>{{ questions|length }}</strong> questions.</p>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal()">Go Back</button>
+      <button class="btn btn-submit" onclick="submitExam()">Confirm Submit</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const STUDENT_ID = {{ student.studentid }};
+const EXAM_ID    = {{ exam.examid }};
+const TOTAL_Q    = {{ questions|length }};
+const START_TIME = new Date().toISOString();
+
+const answers = {};   // { questionId: chosenOptionId }
+let startMs   = Date.now();
+
+// ── Clock ──────────────────────────────────────────────────────────────────────
+function pad(n) { return String(n).padStart(2, '0'); }
+
+setInterval(() => {
+  const diff = Math.floor((Date.now() - startMs) / 1000);
+  const h = Math.floor(diff / 3600);
+  const m = Math.floor((diff % 3600) / 60);
+  const s = diff % 60;
+  document.getElementById('clock-display').textContent = `${pad(h)}:${pad(m)}:${pad(s)}`;
+}, 1000);
+
+// ── Answer tracking ────────────────────────────────────────────────────────────
+function markAnswered(qIdx, questionId, optionId) {
+  answers[questionId] = optionId;
+  const dot = document.getElementById(`dot-${qIdx}`);
+  dot.classList.add('answered');
+
+  // Highlight chosen label
+  document.querySelectorAll(`[name="q_${questionId}"]`).forEach(r => {
+    r.closest('.choice-label').classList.remove('chosen');
+  });
+  document.querySelector(`[name="q_${questionId}"][value="${optionId}"]`)
+          .closest('.choice-label').classList.add('chosen');
+
+  updateCount();
+}
+
+function updateCount() {
+  const count = Object.keys(answers).length;
+  document.getElementById('answered-count').textContent = `${count} / ${TOTAL_Q}`;
+}
+
+function scrollToQ(idx) {
+  document.getElementById(`qblock-${idx}`).scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ── Submit ─────────────────────────────────────────────────────────────────────
+function confirmSubmit() {
+  const answered = Object.keys(answers).length;
+  document.getElementById('modal-answered').textContent = answered;
+  if (answered < TOTAL_Q) {
+    document.getElementById('modal-body').innerHTML =
+      `⚠️ You have answered <strong>${answered}</strong> of <strong>${TOTAL_Q}</strong> questions.<br>Unanswered questions will score 0.`;
+  }
+  document.getElementById('modal').style.display = 'flex';
+}
+
+function closeModal() {
+  document.getElementById('modal').style.display = 'none';
+}
+
+async function submitExam() {
+  const btn = document.querySelector('.modal-actions .btn-submit');
+  btn.disabled = true;
+  btn.textContent = 'Submitting…';
+
+  const answersArray = Object.entries(answers).map(([qid, oid]) => ({
+    question_id:      parseInt(qid),
+    chosen_option_id: parseInt(oid)
+  }));
+
+  try {
+    const res = await fetch('/api/submit_exam', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        student_id: STUDENT_ID,
+        exam_id:    EXAM_ID,
+        start_time: START_TIME,
+        answers:    answersArray
+      })
+    });
+    const data = await res.json();
+    if (data.success) {
+      window.location = `/result/${data.student_exam_id}`;
+    } else {
+      alert('Error: ' + data.error);
+      btn.disabled = false;
+      btn.textContent = 'Confirm Submit';
+    }
+  } catch(e) {
+    alert('Network error. Please try again.');
+    btn.disabled = false;
+    btn.textContent = 'Confirm Submit';
+  }
+}
+
+// Intersection observer to highlight active question nav dot
+const qBlocks = document.querySelectorAll('.question-block');
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      document.querySelectorAll('.nav-dot').forEach(d => d.classList.remove('active'));
+      const idx = e.target.dataset.index;
+      const dot = document.getElementById(`dot-${idx}`);
+      if (dot) dot.classList.add('active');
+    }
+  });
+}, { threshold: 0.5 });
+qBlocks.forEach(b => observer.observe(b));
+</script>
+{% endblock %}

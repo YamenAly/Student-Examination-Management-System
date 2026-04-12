@@ -1,9 +1,20 @@
+--Department/Branch (DepartmentID, DepartmentName TEXT, Location TEXT)
+
+CREATE TABLE Department (
+
+	DepartmentID   SERIAL PRIMARY KEY,
+	DepartementName TEXT NOT NULL ,
+	DeptLocation   TEXT
+);
+
+---------------------------------------------------------------------------------
+
 -- Create procedure to insert new department
 CREATE OR REPLACE PROCEDURE insertDepartment(p_dept_name TEXT, p_dept_loc TEXT)
 LANGUAGE plpgsql AS 
 $$
 BEGIN
-	INSERT INTO Department(DepartementName, DeptLocation) VALUES (p_dept_name, p_dept_loc);
+	INSERT INTO Department(DepartmentName, DeptLocation) VALUES (p_dept_name, p_dept_loc);
 END;
 $$;
 
@@ -27,7 +38,7 @@ BEGIN
 		IF NOT EXISTS(SELECT * FROM Department WHERE DepartmentID =  p_dept_id)
 			THEN RAISE EXCEPTION 'This department does not exist';
 		END IF;
-	UPDATE Department SET DepartementName = p_dept_name, DeptLocation = p_dept_loc 
+	UPDATE Department SET DepartmentName = p_dept_name, DeptLocation = p_dept_loc 
 	WHERE DepartmentID =  p_dept_id;
 END;
 $$;

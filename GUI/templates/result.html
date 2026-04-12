@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Result — {{ se.examname }}{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <div class="breadcrumb"><a href="/">Portal</a> / <a href="/student/{{ se.studentid }}">{{ se.studentname }}</a> / Result</div>
+    <h1 class="page-title">{{ se.examname }}</h1>
+    <p class="page-meta">{{ se.coursename }}</p>
+  </div>
+</div>
+
+<!-- Score Card -->
+<div class="score-card">
+  <div class="score-circle {% if se.percentage and se.percentage >= 80 %}pass{% elif se.percentage and se.percentage >= 50 %}mid{% else %}fail{% endif %}">
+    <div class="score-pct">{{ se.percentage or '—' }}%</div>
+    <div class="score-label">Score</div>
+  </div>
+  <div class="score-details">
+    <div class="score-row">
+      <span class="score-key">Total Grade</span>
+      <span class="score-val">{{ se.totalgrade }} / {{ se.maxdegree or '?' }}</span>
+    </div>
+    <div class="score-row">
+      <span class="score-key">Student</span>
+      <span class="score-val">{{ se.studentname }}</span>
+    </div>
+    <div class="score-row">
+      <span class="score-key">Started</span>
+      <span class="score-val">{{ se.starttime.strftime('%d %b %Y, %H:%M') if se.starttime else '—' }}</span>
+    </div>
+    <div class="score-row">
+      <span class="score-key">Finished</span>
+      <span class="score-val">{{ se.endtime.strftime('%d %b %Y, %H:%M') if se.endtime else '—' }}</span>
+    </div>
+  </div>
+</div>
+
+<!-- Answer Review -->
+<section class="section">
+  <div class="section-header">
+    <h2 class="section-title">Answer Review</h2>
+    <span class="badge-count">{{ answers|length }} answered</span>
+  </div>
+
+  <div class="review-list">
+    {% for a in answers %}
+    <div class="review-block {% if a.iscorrect %}correct{% else %}wrong{% endif %}">
+      <div class="review-header">
+        <div class="review-status">
+          {% if a.iscorrect %}✓{% else %}✗{% endif %}
+        </div>
+        <div class="review-q">{{ a.questiontext }}</div>
+        <div class="review-pts">{{ a.points }} pt{% if a.points != 1 %}s{% endif %}</div>
+      </div>
+      <div class="review-answers">
+        <div class="review-ans your-ans">
+          <span class="ans-label">Your answer:</span>
+          <span class="ans-text">{{ a.chosenanswer or '(skipped)' }}</span>
+        </div>
+        {% if not a.iscorrect %}
+        <div class="review-ans correct-ans">
+          <span class="ans-label">Correct:</span>
+          <span class="ans-text">{{ a.correctanswer or '—' }}</span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<div class="action-bar">
+  <a href="/student/{{ se.studentid }}" class="btn btn-secondary">← Back to Dashboard</a>
+</div>
+{% endblock %}

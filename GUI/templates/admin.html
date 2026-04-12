@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{% block title %}Admin Panel{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <div class="breadcrumb"><a href="/">Portal</a> / Admin</div>
+    <h1 class="page-title">Admin Panel</h1>
+    <p class="page-meta">Exam generation and correction</p>
+  </div>
+</div>
+
+<div class="admin-grid">
+  <!-- Generate Exam -->
+  <div class="admin-card">
+    <h2 class="admin-card-title">⊕ Generate Exam</h2>
+    <div class="form-group">
+      <label class="form-label">Exam Name</label>
+      <input class="form-input" type="text" id="exam-name" placeholder="e.g. Midterm 2024">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Course</label>
+      <select class="form-input" id="exam-course">
+        <option value="">— select course —</option>
+        {% for c in courses %}
+        <option value="{{ c.courseid }}">{{ c.coursename }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">MCQ Count</label>
+        <input class="form-input" type="number" id="num-mcq" value="5" min="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">T/F Count</label>
+        <input class="form-input" type="number" id="num-tf" value="5" min="0">
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="generateExam()">Generate Exam →</button>
+    <div class="feedback" id="gen-feedback"></div>
+  </div>
+
+  <!-- Correct Exam -->
+  <div class="admin-card">
+    <h2 class="admin-card-title">✓ Correct Exam</h2>
+    <p class="admin-card-desc">Recalculate a student's exam grade by comparing answers to model answers.</p>
+    <div class="form-group">
+      <label class="form-label">Student Exam ID</label>
+      <input class="form-input" type="number" id="se-id" placeholder="e.g. 42">
+    </div>
+    <button class="btn btn-primary" onclick="correctExam()">Correct Exam →</button>
+    <div class="feedback" id="correct-feedback"></div>
+  </div>
+</div>
+
+<!-- Recent Exams Table -->
+<section class="section">
+  <div class="section-header">
+    <h2 class="section-title">All Exams</h2>
+    <button class="btn-sm" onclick="loadSubmissions()">Load Submissions</button>
+  </div>
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr><th>ID</th><th>Exam Name</th><th>Course</th><th>Questions</th><th>Created</th></tr>
+      </thead>
+      <tbody>
+        {% for e in exams %}
+        <tr>
+          <td class="mono">{{ e.examid }}</td>
+          <td class="td-primary">{{ e.examname }}</td>
+          <td>{{ e.coursename }}</td>
+          <td>{{ e.totalquestions }}</td>
+          <td class="td-date">{{ e.createddate.strftime('%d %b %Y, %H:%M') if e.createddate else '' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- Student Submissions -->
+<section class="section" id="submissions-section" style="display:none">
+  <div class="section-header">
+    <h2 class="section-title">Student Submissions</h2>
+  </div>
+  <div class="table-wrap">
+    <table class="data-table" id="submissions-table">
+      <thead>
+        <tr><th>SE ID</th><th>Student</th><th>Exam</th><th>Grade</th><th>Action</th></tr>
+      </thead>
+      <tbody id="submissions-body"></tbody>
+    </table>
+  </div>
+</section>
+
+<script>
+function showFeedback(id, msg, ok) {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.className = 'feedback ' + (ok ? 'ok' : 'err');
+}
+
+async function generateExam() {
+  const name   = document.getElementById('exam-name').value.trim();
+  const course = document.getElementById('exam-course').value;
+  const mcq    = parseInt(document.getElementById('num-mcq').value) || 0;
+  const tf     = parseInt(document.getElementById('num-tf').value) || 0;
+  if (!name || !course) { showFeedback('gen-feedback', 'Please fill in all fields.', false); return; }
+
+  const res  = await fetch('/api/generate_exam', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ exam_name: name, course_id: parseInt(course), num_mcq: mcq, num_tf: tf })
+  });
+  const data = await res.json();
+  showFeedback('gen-feedback', data.success ? '✓ Exam generated successfully!' : '✗ ' + data.error, data.success);
+  if (data.success) location.reload();
+}
+
+async function correctExam() {
+  const seId = parseInt(document.getElementById('se-id').value);
+  if (!seId) { showFeedback('correct-feedback', 'Please enter a valid Student Exam ID.', false); return; }
+  const res  = await fetch('/api/correct_exam', {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ student_exam_id: seId })
+  });
+  const data = await res.json();
+  showFeedback('correct-feedback', data.success ? '✓ Exam corrected successfully!' : '✗ ' + data.error, data.success);
+}
+
+async function loadSubmissions() {
+  const res  = await fetch('/api/student_exams_pending');
+  const rows = await res.json();
+  const tbody = document.getElementById('submissions-body');
+  tbody.innerHTML = rows.map(r => `
+    <tr>
+      <td class="mono">${r.studentexamid}</td>
+      <td class="td-primary">${r.studentname}</td>
+      <td>${r.examname}</td>
+      <td>${r.totalgrade}</td>
+      <td><a href="/result/${r.studentexamid}" class="btn-sm">View →</a></td>
+    </tr>
+  `).join('');
+  document.getElementById('submissions-section').style.display = 'block';
+}
+</script>
+{% endblock %}

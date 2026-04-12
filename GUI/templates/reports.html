@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% block title %}Reports{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <div class="breadcrumb"><a href="/">Portal</a> / Reports</div>
+    <h1 class="page-title">Reports</h1>
+    <p class="page-meta">Analytics and data exports</p>
+  </div>
+</div>
+
+<div class="reports-tabs" id="reports-tabs">
+  <button class="tab-btn active" onclick="switchTab('dept')">Students by Department</button>
+  <button class="tab-btn" onclick="switchTab('grades')">Student Grades</button>
+  <button class="tab-btn" onclick="switchTab('instructor')">Instructor Courses</button>
+  <button class="tab-btn" onclick="switchTab('exam_q')">Exam Questions</button>
+</div>
+
+<!-- Tab: Students by Department -->
+<div class="tab-panel active" id="tab-dept">
+  <div class="report-controls">
+    <select class="form-input" id="dept-select">
+      <option value="">— select department —</option>
+      {% for d in departments %}
+      <option value="{{ d.departmentid }}">{{ d.departementname }}</option>
+      {% endfor %}
+    </select>
+    <button class="btn btn-primary" onclick="runReport('dept')">Run Report →</button>
+  </div>
+  <div id="result-dept" class="report-result"></div>
+</div>
+
+<!-- Tab: Student Grades -->
+<div class="tab-panel" id="tab-grades">
+  <div class="report-controls">
+    <select class="form-input" id="student-select">
+      <option value="">— select student —</option>
+      {% for s in students %}
+      <option value="{{ s.studentid }}">{{ s.name }}</option>
+      {% endfor %}
+    </select>
+    <button class="btn btn-primary" onclick="runReport('grades')">Run Report →</button>
+  </div>
+  <div id="result-grades" class="report-result"></div>
+</div>
+
+<!-- Tab: Instructor Courses -->
+<div class="tab-panel" id="tab-instructor">
+  <div class="report-controls">
+    <select class="form-input" id="instructor-select">
+      <option value="">— select instructor —</option>
+      {% for i in instructors %}
+      <option value="{{ i.instructorid }}">{{ i.name }}</option>
+      {% endfor %}
+    </select>
+    <button class="btn btn-primary" onclick="runReport('instructor')">Run Report →</button>
+  </div>
+  <div id="result-instructor" class="report-result"></div>
+</div>
+
+<!-- Tab: Exam Questions -->
+<div class="tab-panel" id="tab-exam_q">
+  <div class="report-controls">
+    <input class="form-input" type="number" id="exam-id-input" placeholder="Enter Exam ID">
+    <button class="btn btn-primary" onclick="runReport('exam_q')">Run Report →</button>
+  </div>
+  <div id="result-exam_q" class="report-result"></div>
+</div>
+
+<script>
+function switchTab(tab) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(`tab-${tab}`).classList.add('active');
+  event.target.classList.add('active');
+}
+
+function makeTable(headers, rows) {
+  if (!rows.length) return '<div class="empty-state"><p>No data found.</p></div>';
+  const ths = headers.map(h => `<th>${h}</th>`).join('');
+  const trs = rows.map(r => `<tr>${headers.map(h => `<td>${r[h.toLowerCase()] ?? r[Object.keys(r).find(k=>k.toLowerCase()===h.toLowerCase())] ?? '—'}</td>`).join('')}</tr>`).join('');
+  return `<div class="table-wrap"><table class="data-table"><thead><tr>${ths}</tr></thead><tbody>${trs}</tbody></table></div>`;
+}
+
+async function runReport(type) {
+  const resultEl = document.getElementById(`result-${type}`);
+  resultEl.innerHTML = '<div class="loading-spinner">Loading…</div>';
+
+  if (type === 'dept') {
+    const id = document.getElementById('dept-select').value;
+    if (!id) { resultEl.innerHTML = '<p class="err-msg">Please select a department.</p>'; return; }
+    const data = await fetch(`/api/report/students_by_department/${id}`).then(r=>r.json());
+    resultEl.innerHTML = makeTable(
+      ['StudentID','Name','Email','Phone','TrackName','BranchName'],
+      data
+    );
+  } else if (type === 'grades') {
+    const id = document.getElementById('student-select').value;
+    if (!id) { resultEl.innerHTML = '<p class="err-msg">Please select a student.</p>'; return; }
+    const data = await fetch(`/api/report/student_grades/${id}`).then(r=>r.json());
+    // Add percentage bar
+    if (data.length) {
+      const ths = ['CourseName','ExamName','TotalGrade','MaxDegree','Percentage'].map(h=>`<th>${h}</th>`).join('');
+      const trs = data.map(r => {
+        const pct = r.percentage || 0;
+        const cls = pct>=80?'pass':pct>=50?'mid':'fail';
+        return `<tr>
+          <td class="td-primary">${r.coursename}</td>
+          <td>${r.examname}</td>
+          <td>${r.totalgrade}</td>
+          <td>${r.maxdegree||'—'}</td>
+          <td><div class="progress-cell"><div class="progress-bar"><div class="progress-fill ${cls}" style="width:${Math.min(pct,100)}%"></div></div><span class="progress-pct">${pct}%</span></div></td>
+        </tr>`;
+      }).join('');
+      resultEl.innerHTML = `<div class="table-wrap"><table class="data-table"><thead><tr>${ths}</tr></thead><tbody>${trs}</tbody></table></div>`;
+    } else {
+      resultEl.innerHTML = '<div class="empty-state"><p>No exam records found for this student.</p></div>';
+    }
+  } else if (type === 'instructor') {
+    const id = document.getElementById('instructor-select').value;
+    if (!id) { resultEl.innerHTML = '<p class="err-msg">Please select an instructor.</p>'; return; }
+    const data = await fetch(`/api/report/instructor_courses/${id}`).then(r=>r.json());
+    resultEl.innerHTML = makeTable(['CourseName','TrackName','StudentCount'], data);
+  } else if (type === 'exam_q') {
+    const id = document.getElementById('exam-id-input').value;
+    if (!id) { resultEl.innerHTML = '<p class="err-msg">Please enter an exam ID.</p>'; return; }
+    const data = await fetch(`/api/report/exam_questions/${id}`).then(r=>r.json());
+    if (!data.questions || !data.questions.length) {
+      resultEl.innerHTML = '<div class="empty-state"><p>No questions found for this exam.</p></div>'; return;
+    }
+    const html = data.questions.map((q, i) => {
+      const choices = q.choices.map(c =>
+        `<div class="review-ans ${c.iscorrect?'correct-ans':''}">
+          <span class="choice-marker small">${c.iscorrect?'✓':''}</span>
+          <span>${c.optiontext}</span>
+         </div>`
+      ).join('');
+      return `<div class="review-block correct" style="margin-bottom:1rem">
+        <div class="review-header">
+          <div class="q-number">Q${i+1}</div>
+          <div class="review-q">${q.questiontext}</div>
+          <div class="q-type-badge ${q.questiontype.toLowerCase()}">${q.questiontype}</div>
+          <div class="q-points">${q.points}pt</div>
+        </div>
+        <div class="review-answers">${choices}</div>
+      </div>`;
+    }).join('');
+    resultEl.innerHTML = `<h3 style="margin-bottom:1.2rem;opacity:.7">${data.exam.examname||''}</h3>${html}`;
+  }
+}
+</script>
+{% endblock %}

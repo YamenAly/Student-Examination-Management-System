@@ -1,3 +1,14 @@
+-- • Track (TrackID, TrackName TEXT, DepartmentID FK)
+CREATE TABLE Track (
+	TrackID  SERIAL PRIMARY KEY ,
+	TrackName TEXT NOT NULL,
+	DepartmentID INT not null	
+
+	CONSTRAINT fk_depid FOREIGN KEY (DepartmentID ) REFERENCES Department(DepartmentID)
+	
+);
+
+----------------------------------------------------------------------------------------------------
 
 
 Alter table Track

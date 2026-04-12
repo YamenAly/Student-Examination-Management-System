@@ -242,6 +242,66 @@ SAVEPOINT assign_Privileges_before;
 grant all PRIVILEGES on all tables in schema public to adm_role;
 revoke all privileges on all tables in schema public from student_role;
 revoke all privileges on all tables in schema public from instructor_role;
+
+Create USER amal WITH PASSWORD '123';
+
+
+Create USER yamen WITH PASSWORD '123';
+
+
+Create USER nada WITH PASSWORD '123';
+
+
+Grant adm_role to amal;
+
+
+Grant instructor_role to yamen;
+
+
+Grant student_role to nada;
+
+
+/* 
+
+
+we will do this for all the procedures after creating them and choose which schema should the procedure be and the role that can execute it 
+
+
+then we will add   
+
+
+SECURITY DEFINER
+
+
+SET search_path=public
+
+
+after language plpgsql to make the procedure execute without select option to the role. 
+
+
+so the roles now can execute the procedure and cannot use select or any view or any direct access to tgihe tables .
+
+
+GRANT EXECUTE ON PROCEDURE instructor.updatechoice(integer, text, integer) TO instructor_role;
+
+
+
+
+
+GRANT EXECUTE ON PROCEDURE instructor.updatechoice(integer, text, integer) TO adm_role;
+
+
+--After loading all PROCEDURES
+
+
+--
+
+
+
+
+
+*/
+
 SAVEPOINT assign_Prigit pullvileges_after;
 
 

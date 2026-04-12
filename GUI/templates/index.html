@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}ExamHub — Portal{% endblock %}
+{% block content %}
+<div class="hero">
+  <div class="hero-label">ITI Exam System</div>
+  <h1 class="hero-title">ExamHub</h1>
+  <p class="hero-sub">Select your role to continue</p>
+</div>
+
+<div class="portal-grid">
+  <!-- Student Card -->
+  <div class="portal-card" id="student-card">
+    <div class="card-icon">⬡</div>
+    <h2 class="card-title">Student</h2>
+    <p class="card-desc">View and take your assigned exams, check your grades and performance history.</p>
+    <div class="select-wrapper">
+      <label class="select-label">Choose Student</label>
+      <select id="student-select" class="styled-select">
+        <option value="">— select —</option>
+        {% for s in students %}
+        <option value="{{ s.studentid }}">{{ s.name }} ({{ s.email }})</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button class="btn btn-primary" onclick="goStudent()">Enter Dashboard →</button>
+  </div>
+
+  <!-- Admin Card -->
+  <div class="portal-card" id="admin-card">
+    <div class="card-icon">◈</div>
+    <h2 class="card-title">Administrator</h2>
+    <p class="card-desc">Generate exams, manage courses, correct submitted exams and oversee the system.</p>
+    <a href="/admin" class="btn btn-secondary">Open Admin Panel →</a>
+  </div>
+
+  <!-- Reports Card -->
+  <div class="portal-card" id="reports-card">
+    <div class="card-icon">◎</div>
+    <h2 class="card-title">Reports</h2>
+    <p class="card-desc">View detailed reports: students by department, grade summaries, instructor courses.</p>
+    <a href="/reports" class="btn btn-secondary">View Reports →</a>
+  </div>
+</div>
+
+<script>
+function goStudent() {
+  const id = document.getElementById('student-select').value;
+  if (!id) { alert('Please select a student first'); return; }
+  window.location = `/student/${id}`;
+}
+</script>
+{% endblock %}

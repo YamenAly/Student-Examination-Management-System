@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block title %}{{ student.name }} — Dashboard{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <div>
+    <div class="breadcrumb"><a href="/">Portal</a> / Student</div>
+    <h1 class="page-title">{{ student.name }}</h1>
+    <p class="page-meta">{{ student.email }} &nbsp;·&nbsp; {{ student.phone }}</p>
+  </div>
+  <div class="header-badge">Student #{{ student.studentid }}</div>
+</div>
+
+<!-- Available Exams -->
+<section class="section">
+  <div class="section-header">
+    <h2 class="section-title">
+      <span class="section-dot available"></span>Available Exams
+    </h2>
+    <span class="badge-count">{{ available_exams|length }}</span>
+  </div>
+
+  {% if available_exams %}
+  <div class="exam-grid">
+    {% for exam in available_exams %}
+    <div class="exam-card available-card" id="card-{{ exam.examid }}">
+      <div class="exam-card-top">
+        <div class="exam-track">{{ exam.trackname }}</div>
+        <div class="exam-questions">{{ exam.totalquestions }}Q</div>
+      </div>
+      <h3 class="exam-name">{{ exam.examname }}</h3>
+      <p class="exam-course">{{ exam.coursename }}</p>
+      <div class="exam-meta">
+        <span>Max: {{ exam.maxdegree or '—' }} pts</span>
+        <span>{{ exam.createddate.strftime('%d %b %Y') if exam.createddate else '' }}</span>
+      </div>
+      <div class="exam-timer" id="timer-{{ exam.examid }}">
+        <div class="timer-dot ready"></div>
+        <span>Ready to start</span>
+      </div>
+      <button class="btn btn-start" onclick="startExam({{ exam.examid }}, {{ student.studentid }}, this)">
+        Start Exam →
+      </button>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-icon">✓</div>
+    <p>No pending exams — you're all caught up!</p>
+  </div>
+  {% endif %}
+</section>
+
+<!-- Taken Exams -->
+<section class="section">
+  <div class="section-header">
+    <h2 class="section-title">
+      <span class="section-dot taken"></span>Completed Exams
+    </h2>
+    <span class="badge-count">{{ taken_exams|length }}</span>
+  </div>
+
+  {% if taken_exams %}
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Exam</th>
+          <th>Course</th>
+          <th>Grade</th>
+          <th>Max</th>
+          <th>Score</th>
+          <th>Date</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in taken_exams %}
+        <tr>
+          <td class="td-primary">{{ t.examname }}</td>
+          <td>{{ t.coursename }}</td>
+          <td class="td-grade">{{ t.totalgrade }}</td>
+          <td>{{ t.maxdegree or '—' }}</td>
+          <td>
+            {% if t.percentage %}
+            <div class="progress-cell">
+              <div class="progress-bar">
+                <div class="progress-fill {% if t.percentage >= 80 %}pass{% elif t.percentage >= 50 %}mid{% else %}fail{% endif %}"
+                     style="width: {{ [t.percentage, 100]|min }}%"></div>
+              </div>
+              <span class="progress-pct">{{ t.percentage }}%</span>
+            </div>
+            {% else %}—{% endif %}
+          </td>
+          <td class="td-date">{{ t.starttime.strftime('%d %b %Y') if t.starttime else '' }}</td>
+          <td><a href="/result/{{ t.studentexamid }}" class="btn-sm">View →</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <p>No completed exams yet.</p>
+  </div>
+  {% endif %}
+</section>
+
+<script>
+function startExam(examId, studentId, btn) {
+  btn.disabled = true;
+  btn.textContent = 'Loading...';
+  window.location = `/exam/${examId}/take/${studentId}`;
+}
+</script>
+{% endblock %}

@@ -1,7 +1,7 @@
 -- Track_Course (junction)
 CREATE TABLE Track_Course (
 	TrackID  INT NOT NULL --fk,
-    CourseID INT NOT NULL --FK,
+    CourseID INT NOT NULL --fk,
     PRIMARY KEY (TrackID, CourseID) 	 
 );
 
