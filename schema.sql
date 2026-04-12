@@ -87,7 +87,7 @@ CREATE TABLE IF NOT EXISTS Instructor (
 	Name Text Not NULL,
 	Email Text Not NULL Unique,
 	DepartmentNo Int ,
-	CONSTRAINT fk_instructor_dept FOREIGN KEY (DepartmentNo) REFERENCES Department(DepartmentID)
+	CONSTRAINT fk_instructor_dept FOREIGN KEY (DepartmentNo) REFERENCES Department(DepartmentID) on delete set null
 );
 
 CREATE INDEX idx_instructor_department ON Instructor(DepartmentNo);
@@ -112,7 +112,7 @@ CREATE TABLE IF NOT EXISTS Questions(
     QuestionType TEXT CHECK (QuestionType IN ('MCQ', 'TF')),
     Points INT NOT NULL,
 
-    CONSTRAINT fk_course FOREIGN KEY (CourseID) REFERENCES Course(CourseID) ON DELETE CASCADE 
+    CONSTRAINT fk_course FOREIGN KEY (CourseID) REFERENCES Course(CourseID)
 
 );
 CREATE INDEX question_course_idx ON Questions(CourseID);
@@ -125,7 +125,7 @@ CREATE TABLE IF NOT EXISTS Choice(
     OptionText TEXT NOT NULL,
     OptionOrder INT NOT NULL,
 
-    CONSTRAINT fk_question FOREIGN KEY (QuestionID) REFERENCES Questions(QuestionID)
+    CONSTRAINT fk_question FOREIGN KEY (QuestionID) REFERENCES Questions(QuestionID) on delete CASCADE
 
 );
 CREATE INDEX question_option_idx ON Choice(QuestionID);
@@ -135,8 +135,8 @@ CREATE TABLE IF NOT EXISTS ModelAnswer(
     QuestionID INT UNIQUE NOT NULL,
     CorrectOptionID INT NOT NULL,
 
-    CONSTRAINT fk_question FOREIGN KEY (QuestionID) REFERENCES Questions(QuestionID),
-    CONSTRAINT fk_option FOREIGN KEY (CorrectOptionID) REFERENCES Choice(OptionID)
+    CONSTRAINT fk_question FOREIGN KEY (QuestionID) REFERENCES Questions(QuestionID) on delete CASCADE,
+    CONSTRAINT fk_option FOREIGN KEY (CorrectOptionID) REFERENCES Choice(OptionID) on delete CASCADE
 );
 CREATE INDEX ModelAnswer_idx ON ModelAnswer(QuestionID);
 --Exam table creation
@@ -242,7 +242,7 @@ SAVEPOINT assign_Privileges_before;
 grant all PRIVILEGES on all tables in schema public to adm_role;
 revoke all privileges on all tables in schema public from student_role;
 revoke all privileges on all tables in schema public from instructor_role;
-SAVEPOINT assign_Privileges_after;
+SAVEPOINT assign_Prigit pullvileges_after;
 
 
 
