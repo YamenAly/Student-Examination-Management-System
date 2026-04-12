@@ -9,7 +9,7 @@ CREATE OR REPLACE PROCEDURE SubmitExamAnswers
 LANGUAGE plpgsql
 AS $$
 DECLARE
-    v_StudentEXAM ID INT;
+    v_StudentEXAMID  INT;
     v-CourseID INT;
     v_answer JSONB;
     v_QuestionID INT;
@@ -32,8 +32,8 @@ BEGIN
     WHERE EXAMID = p_EXAMID;
 
     IF v_examCount = 0 THEN
-        RAISE EXCEPTION "Exam does not exist";
-    END IF
+        RAISE EXCEPTION 'Exam does not exist';
+    END IF;
 
     --get course id
     SELECT CourseID INTO v_CourseID
@@ -60,9 +60,10 @@ BEGIN
     IF EXISTS(
         SELECT 1 FROM StudentExam
         WHERE StudentID = p_StudentID AND ExamID = p_ExamID
-    )THEN
-        RAISE EXCEPTION 'The student has already submited this exam'
-    END IF
+    )
+	THEN
+        RAISE EXCEPTION 'The student has already submited this exam';
+    END IF;
     
     --Insert into studentexam the studentud and the examid and the start and end times
     INSERT INTO StudentExam (StudentID, ExamID, StartTime, EndTime, TotalGrade)
@@ -81,8 +82,8 @@ BEGIN
 
 EXCEPTION
     WHEN foreign_key_violation THEN
-        RAISE EXCEPTION 'One of the IDs is invalid, or one of them does not exist'
+        RAISE EXCEPTION 'One of the IDs is invalid, or one of them does not exist';
     WHEN not_null_violation THEN
-        RAISE EXCEPTION 'No null values allowed'
-END:
-$$:
+        RAISE EXCEPTION 'No null values allowed';
+END;
+$$;

@@ -9,11 +9,11 @@ AS $$
         WHERE OptionID = OptionID;
 
         IF NOT FOUND THEN
-        RAISE EXCEPTION "Choice not founc"
+        RAISE EXCEPTION 'Choice not founc'
         END IF;
 
         EXCEPTION
             WHEN foreign_key_violation THEN
-                RAISE EXCEPTION "OptionID invalid";
+                RAISE EXCEPTION 'OptionID invalid';
     END;
 $$;

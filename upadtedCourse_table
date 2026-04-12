@@ -94,8 +94,33 @@ BEGIN
     END IF;
 END;
 $$;
-CALL AddCourseToTrack(1, 3);
 
+------------------------------------------------------------------
+CALL AddCourseToTrack(1, 1);   -- Frontend  -> HTML & CSS
+CALL AddCourseToTrack(2, 1);   -- Frontend  -> JavaScript
+
+CALL AddCourseToTrack(2, 2);   -- Backend   -> JavaScript
+CALL AddCourseToTrack(3, 2);   -- Backend   -> Python Basics
+CALL AddCourseToTrack(4, 2);   -- Backend   -> SQL & Databases
+
+CALL AddCourseToTrack(3, 3);   -- Data Analysis -> Python Basics
+CALL AddCourseToTrack(4, 3);   -- Data Analysis -> SQL & Databases
+CALL AddCourseToTrack(3, 4);   -- Machine Learning -> Python Basics
+
+CALL AddCourseToTrack(5, 5);   -- Network Security -> Linux Fundamentals
+CALL AddCourseToTrack(6, 5);   -- Network Security -> Network Basics
+CALL AddCourseToTrack(5, 6);   -- Ethical Hacking  -> Linux Fundamentals
+CALL AddCourseToTrack(6, 6);   -- Ethical Hacking  -> Network Basics
+
+CALL AddCourseToTrack(7, 7);   -- Android -> Kotlin Basics
+CALL AddCourseToTrack(9, 7);   -- Android -> Flutter & Dart
+CALL AddCourseToTrack(8, 8);   -- IOS -> Swift Basics
+CALL AddCourseToTrack(9, 8);   -- IOS -> Flutter & Dart
+
+CALL AddCourseToTrack(10, 9);  -- AWS Cloud -> Cloud Fundamentals
+CALL AddCourseToTrack(11, 9);  -- AWS Cloud -> Docker & Kubernetes
+CALL AddCourseToTrack(11, 10); -- DevOps -> Docker & Kubernetes
+CALL AddCourseToTrack(12, 10); -- DevOps -> CI/CD Pipelines
 
 
 
@@ -145,32 +170,20 @@ CALL UpdateCourse(2, 'Advanced Python', 60, 100);
 -- create deletecourse prosedure 
 -- the validtion in this procedure is just to check on coure id as it's the unique value
 
-CREATE OR REPLACE PROCEDURE UpdateCourse
+CREATE OR REPLACE PROCEDURE DeleteCourse
 (
-    IN p_CourseID INT,
-    IN p_CourseName TEXT,
-    IN p_MinDegree INT,
-    IN p_MaxDegree INT
+    IN p_CourseID INT
 )
 LANGUAGE plpgsql
 AS $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM Course WHERE CourseID = p_CourseID) THEN
         RAISE EXCEPTION 'CourseID % does not exist.', p_CourseID;
-    ELSIF p_CourseName IS NULL OR TRIM(p_CourseName) = '' THEN
-        RAISE EXCEPTION 'CourseName cannot be NULL or empty.';
-    ELSIF p_MinDegree < 0 THEN
-        RAISE EXCEPTION 'MinDegree cannot be negative.';
-    ELSIF p_MaxDegree < p_MinDegree THEN
-        RAISE EXCEPTION 'MaxDegree % cannot be less than MinDegree %.', p_MaxDegree, p_MinDegree;
     ELSE
-        UPDATE Course
-        SET CourseName = p_CourseName,
-            MinDegree  = p_MinDegree,
-            MaxDegree  = p_MaxDegree
+        DELETE FROM Course
         WHERE CourseID = p_CourseID;
 
-        RAISE NOTICE 'Course % updated successfully.', p_CourseID;
+        RAISE NOTICE 'Course % deleted successfully.', p_CourseID;
     END IF;
 END;
 $$;
