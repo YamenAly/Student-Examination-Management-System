@@ -1,17 +1,17 @@
 CREATE OR REPLACE PROCEDURE DeleteQuestion
 (
-    IN QuestionID INT
+    IN p_QuestionID INT
 )
 LANGUAGE plpgsql
 AS $$
     BEGIN
-        DELETE FROM Questions *
-        WHERE QuestionID = QuestionID
-    END
+        DELETE FROM Questions * WHERE QuestionID = p_QuestionID;
+    
     IF NOT FOUND THEN
-    RAISE EXCEPTION "Question not found";
+    RAISE EXCEPTION 'Question not found';
     END IF;
     EXCEPTION
             WHEN foreign_key_violation THEN
-                RAISE EXCEPTION "QuestionID invalid";
+                RAISE EXCEPTION 'QuestionID invalid';
+END;
 $$;
